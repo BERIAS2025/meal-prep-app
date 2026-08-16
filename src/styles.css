@@ -17,7 +17,9 @@
 
   --text: #161a17;
   --text-2: #4d5650;
-  --text-3: #77807a;
+  /* text-3 carries the small hint lines, so it has to clear 4.5:1 on white —
+     which the more obvious lighter grey does not. This is 5.2:1. */
+  --text-3: #676f6a;
 
   --accent: #22755a;
   --accent-text: #1a5c46;
