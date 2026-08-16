@@ -30,7 +30,12 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      # enablement turns Pages on by itself, so the first push works whether or
+      # not the Pages source has been set by hand yet.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
