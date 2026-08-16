@@ -36,11 +36,12 @@ export const WEEK_TEMPLATES = [
       },
       lunch: {
         title: 'Chicken, broccoli & quinoa',
+        sauce: 'lemon_garlic_yogurt',
         slots: [protein('protein', 'chicken_breast'), veg('veg', 'broccoli', 180), veg('veg2', 'carrots', 90), carb('carb', 'quinoa', 250), fat('fat', 'olive_oil', 20)],
       },
       snack: {
         title: 'Greek yogurt, raspberries & granola',
-        slots: [protein('protein', 'greek_yogurt'), fruit('fruit', 'raspberries', 100), carb('carb', 'granola', 40)],
+        slots: [protein('protein', 'greek_yogurt_whole'), fruit('fruit', 'raspberries', 100), carb('carb', 'granola', 40)],
       },
       shake: {
         title: 'Whey, oat milk & banana',
@@ -48,6 +49,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Salmon, sweet potato & green beans',
+        sauce: 'chimichurri',
         slots: [protein('protein', 'salmon'), carb('carb', 'sweet_potato'), veg('veg', 'green_beans', 180), veg('veg2', 'red_onion', 60), fat('fat', 'olive_oil', 25)],
       },
     },
@@ -58,10 +60,11 @@ export const WEEK_TEMPLATES = [
     meals: {
       breakfast: {
         title: 'Yogurt & oat bowl with a veg side',
-        slots: [protein('protein', 'greek_yogurt'), carb('carb', 'oats', 90), fruit('fruit', 'strawberries', 150), veg('veg', 'cucumber', 100), veg('veg2', 'tomato', 80), fat('fat', 'chia_seeds', 25)],
+        slots: [protein('protein', 'greek_yogurt_whole'), carb('carb', 'oats', 90), fruit('fruit', 'strawberries', 150), veg('veg', 'cucumber', 100), veg('veg2', 'tomato', 80), fat('fat', 'chia_seeds', 25)],
       },
       lunch: {
         title: 'Tuna salad with quinoa',
+        sauce: 'mustard_vinaigrette',
         slots: [protein('protein', 'tuna_canned'), veg('veg', 'cucumber', 120), veg('veg2', 'tomato', 120), veg('veg3', 'red_onion', 40), carb('carb', 'quinoa', 250), fat('fat', 'olive_oil', 20)],
       },
       snack: {
@@ -74,6 +77,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Chicken, brown rice & roast vegetables',
+        sauce: 'tzatziki',
         slots: [protein('protein', 'chicken_breast'), carb('carb', 'brown_rice'), veg('veg', 'zucchini', 170), veg('veg2', 'bell_pepper', 110), fat('fat', 'olive_oil', 25)],
       },
     },
@@ -88,11 +92,12 @@ export const WEEK_TEMPLATES = [
       },
       lunch: {
         title: 'Turkey, kale & rice',
+        sauce: 'parmesan_yogurt',
         slots: [protein('protein', 'turkey_breast'), veg('veg', 'kale', 80), veg('veg2', 'bell_pepper', 120), carb('carb', 'brown_rice', 230), fat('fat', 'avocado', 80)],
       },
       snack: {
         title: 'Greek yogurt, blueberries & granola',
-        slots: [protein('protein', 'greek_yogurt'), fruit('fruit', 'blueberries', 120), carb('carb', 'granola', 40)],
+        slots: [protein('protein', 'greek_yogurt_whole'), fruit('fruit', 'blueberries', 120), carb('carb', 'granola', 40)],
       },
       shake: {
         title: 'Whey, oat milk & blueberries',
@@ -100,6 +105,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Beef, sweet potato & broccoli',
+        sauce: 'chimichurri',
         slots: [protein('protein', 'ground_beef_90'), carb('carb', 'sweet_potato'), veg('veg', 'broccoli', 180), veg('veg2', 'garlic', 6), fat('fat', 'olive_oil', 25)],
       },
     },
@@ -114,11 +120,12 @@ export const WEEK_TEMPLATES = [
       },
       lunch: {
         title: 'Chicken with cauliflower & potato',
+        sauce: 'tzatziki',
         slots: [protein('protein', 'chicken_breast'), veg('veg', 'cauliflower', 180), veg('veg2', 'green_onions', 30), carb('carb', 'white_potato', 260), fat('fat', 'olive_oil', 20)],
       },
       snack: {
         title: 'Yogurt, strawberries, oats & almonds',
-        slots: [protein('protein', 'greek_yogurt'), fruit('fruit', 'strawberries', 150), carb('carb', 'oats', 60), fat('fat', 'almonds', 25)],
+        slots: [protein('protein', 'greek_yogurt_whole'), fruit('fruit', 'strawberries', 150), carb('carb', 'oats', 60), fat('fat', 'almonds', 25)],
       },
       shake: {
         title: 'Whey, oat milk & banana',
@@ -126,6 +133,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Cod, potatoes & asparagus',
+        sauce: 'lemon_garlic_yogurt',
         slots: [protein('protein', 'cod'), carb('carb', 'white_potato'), veg('veg', 'asparagus', 160), veg('veg2', 'tomato', 100), fat('fat', 'olive_oil', 25)],
       },
     },
@@ -136,10 +144,11 @@ export const WEEK_TEMPLATES = [
     meals: {
       breakfast: {
         title: 'Yogurt, pear & greens',
-        slots: [protein('protein', 'greek_yogurt'), fruit('fruit', 'pear', 150), veg('veg', 'spinach', 60), veg('veg2', 'cucumber', 100), carb('carb', 'oats', 70), fat('fat', 'chia_seeds', 25)],
+        slots: [protein('protein', 'greek_yogurt_whole'), fruit('fruit', 'pear', 150), veg('veg', 'spinach', 60), veg('veg2', 'cucumber', 100), carb('carb', 'oats', 70), fat('fat', 'chia_seeds', 25)],
       },
       lunch: {
         title: 'Shrimp, zucchini & quinoa',
+        sauce: 'salsa',
         slots: [protein('protein', 'shrimp'), veg('veg', 'zucchini', 150), veg('veg2', 'tomato', 120), carb('carb', 'quinoa', 250), fat('fat', 'olive_oil', 22)],
       },
       snack: {
@@ -152,6 +161,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Turkey, rice & roasted eggplant',
+        sauce: 'parmesan_yogurt',
         slots: [protein('protein', 'turkey_breast'), carb('carb', 'brown_rice'), veg('veg', 'eggplant', 150), veg('veg2', 'zucchini', 130), fat('fat', 'olive_oil', 25)],
       },
     },
@@ -166,11 +176,12 @@ export const WEEK_TEMPLATES = [
       },
       lunch: {
         title: 'Beef, green beans & rice',
+        sauce: 'chimichurri',
         slots: [protein('protein', 'ground_beef_90'), veg('veg', 'green_beans', 170), veg('veg2', 'mushrooms', 90), carb('carb', 'brown_rice', 230), fat('fat', 'parmesan', 35)],
       },
       snack: {
         title: 'Yogurt, banana, oats & peanut butter',
-        slots: [protein('protein', 'greek_yogurt'), fruit('fruit', 'banana', 100), carb('carb', 'oats', 60), fat('fat', 'peanut_butter', 35)],
+        slots: [protein('protein', 'greek_yogurt_whole'), fruit('fruit', 'banana', 100), carb('carb', 'oats', 60), fat('fat', 'peanut_butter', 35)],
       },
       shake: {
         title: 'Whey, oat milk & banana',
@@ -178,6 +189,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Salmon, sweet potato, kale & carrots',
+        sauce: 'lemon_garlic_yogurt',
         slots: [protein('protein', 'salmon'), carb('carb', 'sweet_potato'), veg('veg', 'kale', 90), veg('veg2', 'carrots', 110), fat('fat', 'olive_oil', 25)],
       },
     },
@@ -192,11 +204,12 @@ export const WEEK_TEMPLATES = [
       },
       lunch: {
         title: 'Cod, broccoli & potatoes',
+        sauce: 'lemon_garlic_yogurt',
         slots: [protein('protein', 'cod'), veg('veg', 'broccoli', 160), veg('veg2', 'carrots', 80), carb('carb', 'white_potato', 260), fat('fat', 'olive_oil', 22)],
       },
       snack: {
         title: 'Greek yogurt, kiwi & granola',
-        slots: [protein('protein', 'greek_yogurt'), fruit('fruit', 'kiwi', 120), carb('carb', 'granola', 40)],
+        slots: [protein('protein', 'greek_yogurt_whole'), fruit('fruit', 'kiwi', 120), carb('carb', 'granola', 40)],
       },
       shake: {
         title: 'Whey, oat milk & banana',
@@ -204,6 +217,7 @@ export const WEEK_TEMPLATES = [
       },
       dinner: {
         title: 'Shrimp, rice & green beans',
+        sauce: 'salsa',
         slots: [protein('protein', 'shrimp'), carb('carb', 'brown_rice'), veg('veg', 'green_beans', 170), veg('veg2', 'mushrooms', 100), fat('fat', 'olive_oil', 25)],
       },
     },

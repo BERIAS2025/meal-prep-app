@@ -62,11 +62,36 @@ Repeat on the tablet — the two devices keep entirely separate data.
 | **Today** | The whole day, with the current or next meal pulled to the top. Tap any ingredient to swap it; every amount re-solves instantly. Each meal explains its own placement. |
 | **Week** | All seven days. Switch a day between Rest / Cardio / Strength — either for that date only, or as the new normal for that weekday. |
 | **Shop** | The week totalled into one list, in **buy** amounts: raw and untrimmed for meat and vegetables, dry for rice and quinoa. |
-| **Prep** | Sunday and Wednesday cook-ahead lists, each covering up to the next prep day. Ticking a task files it in the fridge list with an eat-by date. |
+| **Prep** | Cook-ahead lists covering up to the next prep day, each with **how to cook it** — air fryer, steam oven or pan, with times and the one thing that goes wrong. Ticking a task files it in the fridge list with an eat-by date. |
 | **Log** | One tap to log a craving with a trigger. Counts by trigger and by hour of day, so the pattern shows itself after a couple of weeks. |
 | **Settings** | Your numbers, the goal, the daily rhythm, prep days, theme, ingredients to hide, and backup. |
 
 The **Craving** button floats on every screen. Two taps, no typing required.
+
+### Cooking everything on one day
+
+Set a single prep day in Settings and it covers the whole week. Anything that outlives the fridge
+is split for you, per item: how much stays in the fridge, how much goes **straight** into the
+freezer while it is still fresh. Things that do not survive freezing — shrimp, asparagus, eggs,
+courgette — are moved to a separate *Cook fresh later in the week* list instead of being pushed
+onto a day where they would spoil.
+
+### Sauces
+
+Lunch and dinner carry a sauce, and it is a real recipe with real macros — garlic yogurt,
+chimichurri, lemon yogurt, tomato salsa, mustard vinaigrette, parmesan yogurt. Roughly 60–130 kcal
+a serving, which is not nothing when it is on two plates a day, so it is **counted inside the
+meal**: the plate shrinks to make room rather than the sauce landing on top of your target. Sauce
+components appear in the shopping list, and batch recipes appear in the prep checklist.
+
+Salt, pepper and dried herbs are not modelled — at 1–3 g they are a rounding error. Season freely.
+
+### Ingredients you do not have
+
+Switching an ingredient off in Settings removes it from the plan immediately. The closest
+alternative in the same category takes its place — white potato becomes sweet potato, banana
+becomes kiwi — and the meal card says what it replaced. It also disappears from swap lists, the
+shopping list and any sauce that uses it. Swaps you made by hand are never overridden.
 
 ---
 
@@ -99,10 +124,14 @@ to three weeks. Not medical advice.
 
 Everything is in plain files, no build step needed to understand them:
 
-- `src/data/ingredients.js` — the 50 ingredients, macros per 100 g, plus fiber, fridge life and
+- `src/data/ingredients.js` — the ingredients, macros per 100 g, plus fiber, fridge life and
   raw-to-cooked yield factors. **Branded items vary a lot** — check the label on your granola,
   oat milk and whey and correct the numbers here once.
-- `src/data/templates.js` — the seven day templates: which ingredient fills which slot.
+- `src/data/templates.js` — the seven day templates: which ingredient fills which slot, and the
+  default sauce for lunch and dinner.
+- `src/data/sauces.js` — sauce recipes in grams. Change the grams and the calories, the shopping
+  list and the prep batch sizes all follow.
+- `src/data/cooking.js` — cooking method, times and freezer behaviour per ingredient.
 - `src/data/rationale.js` — the "why now" copy shown on each meal.
 - `src/lib/nutrition.js` — activity factors, goal adjustments, and the macro split per meal.
 

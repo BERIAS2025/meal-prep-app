@@ -6,7 +6,17 @@ import { WEEK_TEMPLATES, MEAL_TIME_KEY } from '../data/templates.js'
 import { RATIONALE, STRENGTH_DINNER_NOTE } from '../data/rationale.js'
 import { MEAL_LABELS, mealsForDayType, mealTargets } from './nutrition.js'
 import { solveMeal, rawAmount } from './solver.js'
-import { BY_ID, macrosFor, EMPTY_MACROS, addMacros, shortName } from '../data/ingredients.js'
+import {
+  BY_ID,
+  macrosFor,
+  EMPTY_MACROS,
+  addMacros,
+  shortName,
+  nearestAvailable,
+  CATEGORY_ORDER,
+} from '../data/ingredients.js'
+import { SAUCE_BY_ID, sauceMacros } from '../data/sauces.js'
+import { COOKING, freezesWell } from '../data/cooking.js'
 import { weekdayOf, weekDays, addDays, minutesOf, daysBetween, WEEKDAY_SHORT } from './date.js'
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
@@ -22,7 +32,9 @@ const MEAL_FLOOR = { breakfast: 250, lunch: 300, snack: 150, shake: 100, dinner:
  */
 function deriveTitle(slots) {
   const pick = (cat) => slots.find((s) => s.category === cat && s.grams > 0)
-  const parts = [pick('protein'), pick('carb'), pick('vegetable') || pick('fruit')]
+  // A shake has no starch, so fall back to the liquid — "Whey & kiwi" reads
+  // like half a recipe.
+  const parts = [pick('protein'), pick('carb') || pick('liquid'), pick('vegetable') || pick('fruit')]
     .filter(Boolean)
     .map((s) => shortName(s.id))
   if (parts.length < 2) return parts[0] || ''
@@ -46,25 +58,48 @@ export function buildDay(state, targets, dateKey) {
   const done = override.done || {}
   const volumeFactor = clamp(targets.kcal / 2200, 0.7, 1.4)
 
+  const hidden = new Set(state.hidden || [])
+
   const meals = mealsForDayType(dayType).map((mealKey) => {
     const tpl = template.meals[mealKey]
     const slots = tpl.slots.map((s) => {
       const swapped = swaps[`${mealKey}.${s.role}`]
-      return swapped && BY_ID[swapped] ? { ...s, id: swapped, swapped: true } : { ...s }
+      // An explicit swap always wins, even onto something marked unavailable.
+      if (swapped && BY_ID[swapped]) return { ...s, id: swapped, swapped: true }
+      // Otherwise: if you have told the app you do not have this, put the
+      // closest thing you do have on the plate instead of ignoring you.
+      if (hidden.has(s.id)) {
+        const stand_in = nearestAvailable(s.id, hidden)
+        if (stand_in && stand_in !== s.id) return { ...s, id: stand_in, replacedFor: s.id }
+      }
+      return { ...s }
     })
+
+    // Sauce: an override, else the template's own, else none.
+    const sauceOverride = swaps[`${mealKey}.sauce`]
+    let sauceId = sauceOverride || tpl.sauce || 'none'
+    const sauceUsesHidden = (SAUCE_BY_ID[sauceId]?.components || []).some((c) => hidden.has(c.id))
+    if (sauceUsesHidden && !sauceOverride) sauceId = 'none'
+    const sauce = SAUCE_BY_ID[sauceId] || SAUCE_BY_ID.none
+    const sauceM = sauceMacros(sauce.id)
+
     const target = mealTargets(dayType, mealKey, targets)
-    const solved = solveMeal(slots, target, volumeFactor)
+    const solved = solveMeal(slots, target, volumeFactor, sauceM)
     const time = state.schedule[MEAL_TIME_KEY[mealKey]]
 
     let why = RATIONALE[mealKey].line
     if (mealKey === 'dinner' && dayType === 'strength') why = `${why} ${STRENGTH_DINNER_NOTE}`
 
     const swapped = slots.some((s) => s.swapped)
+    const replaced = slots.filter((s) => s.replacedFor)
 
     return {
       key: mealKey,
       label: MEAL_LABELS[mealKey],
-      title: swapped ? deriveTitle(solved.slots) || tpl.title : tpl.title,
+      title: swapped || replaced.length ? deriveTitle(solved.slots) || tpl.title : tpl.title,
+      sauce,
+      sauceMacros: sauceM,
+      replaced,
       time,
       minutes: minutesOf(time),
       slots: solved.slots,
@@ -95,6 +130,7 @@ export function buildDay(state, targets, dateKey) {
     totals,
     eaten,
     extras: override.extras || [],
+    replacedCount: meals.reduce((n, m) => n + m.replaced.length, 0),
     dinnerToBed,
     sleepStatus: dinnerToBed == null ? null : dinnerToBed < 180 ? 'tight' : dinnerToBed > 300 ? 'wide' : 'ok',
     hasSwaps: Object.keys(swaps).length > 0,
@@ -125,15 +161,20 @@ export function buildShoppingList(state, targets, weekStartKey) {
   const days = buildWeek(state, targets, weekStartKey)
   const totals = new Map()
 
+  const add = (id, grams, weekday) => {
+    if (!grams) return
+    const prev = totals.get(id) || { eaten: 0, days: new Set() }
+    prev.eaten += grams
+    prev.days.add(WEEKDAY_SHORT[weekday])
+    totals.set(id, prev)
+  }
+
   for (const day of days) {
     for (const meal of day.meals) {
-      for (const slot of meal.slots) {
-        if (!slot.grams) continue
-        const prev = totals.get(slot.id) || { eaten: 0, days: new Set() }
-        prev.eaten += slot.grams
-        prev.days.add(WEEKDAY_SHORT[day.weekday])
-        totals.set(slot.id, prev)
-      }
+      for (const slot of meal.slots) add(slot.id, slot.grams, day.weekday)
+      // Sauces are made from the same database, so their components have to be
+      // on the list too — otherwise you get home without the parsley.
+      for (const c of meal.sauce?.components || []) add(c.id, c.grams, day.weekday)
     }
   }
 
@@ -148,15 +189,16 @@ export function buildShoppingList(state, targets, weekStartKey) {
         category: ing.category,
         eatenG: Math.round(eaten),
         buyG: Math.round(rawAmount(id, eaten)),
-        buyNote: ing.rawFactor < 1 ? 'dry weight' : ing.rawFactor > 1.02 ? 'raw / untrimmed' : null,
+        buyNote:
+          ing.buyLabel ||
+          (ing.rawFactor < 1 ? 'dry weight' : ing.rawFactor > 1.02 ? 'raw / untrimmed' : null),
         note: ing.note,
         usedOn: [...v.days],
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
 
-  const order = ['protein', 'carb', 'vegetable', 'fruit', 'fat', 'liquid']
-  const groups = order
+  const groups = CATEGORY_ORDER
     .map((cat) => ({ category: cat, items: items.filter((i) => i.category === cat) }))
     .filter((g) => g.items.length)
 
@@ -196,6 +238,7 @@ export function buildPrepTasks(state, targets, weekStartKey, prepKey) {
   const covered = prepCoverage(state, weekStartKey, prepKey)
   const portions = state.portions || 1
   const agg = new Map()
+  const sauceAgg = new Map()
 
   for (const dateKey of covered) {
     const day = buildDay(state, targets, dateKey)
@@ -211,17 +254,50 @@ export function buildPrepTasks(state, targets, weekStartKey, prepKey) {
         prev.dates.push(dateKey)
         agg.set(slot.id, prev)
       }
+      if (meal.sauce && meal.sauce.id !== 'none') {
+        const prev = sauceAgg.get(meal.sauce.id) || { dates: [] }
+        prev.dates.push(dateKey)
+        sauceAgg.set(meal.sauce.id, prev)
+      }
     }
   }
 
   const lastCovered = covered[covered.length - 1]
 
+  /**
+   * Split a batch between fridge and freezer.
+   *
+   * Cooking the whole week on one day only works if what outlives the fridge
+   * goes straight into the freezer while it is still fresh — not after it has
+   * already sat for four days. So the split is computed here and stated up
+   * front, per item, rather than left as a warning to interpret.
+   */
+  const splitBatch = (dates, shelfDays, perServing, canFreeze) => {
+    const fridgeUntil = addDays(prepKey, shelfDays - 1)
+    const fridgeDates = dates.filter((d) => d <= fridgeUntil)
+    const freezerDates = dates.filter((d) => d > fridgeUntil)
+    return {
+      eatBy: fridgeUntil < lastCovered ? fridgeUntil : lastCovered,
+      fridgeServings: fridgeDates.length,
+      fridgeG: Math.round(perServing * fridgeDates.length),
+      freezeServings: freezerDates.length,
+      freezeG: Math.round(perServing * freezerDates.length),
+      canFreeze,
+      // Cannot be frozen and will not keep: it needs cooking again later.
+      cookAgainOn: !canFreeze && freezerDates.length ? freezerDates[0] : null,
+      // Nothing at all falls inside the fridge window and it cannot be frozen,
+      // so there is no honest way to put it on today's list — it belongs later
+      // in the week, not in today's tick-count.
+      deferred: !canFreeze && fridgeDates.length === 0,
+      firstNeeded: dates[0],
+    }
+  }
+
   const tasks = [...agg.entries()]
     .map(([id, v]) => {
       const ing = BY_ID[id]
-      const spanDays = Math.min(ing.shelfDays, covered.length)
-      const eatBy = addDays(prepKey, spanDays - 1)
-      const shortfall = daysBetween(eatBy, lastCovered)
+      const cook = COOKING[id]
+      const split = splitBatch(v.dates, ing.shelfDays, v.eaten / v.dates.length, freezesWell(id))
       return {
         id: `${prepKey}:${id}`,
         ingredientId: id,
@@ -231,10 +307,9 @@ export function buildPrepTasks(state, targets, weekStartKey, prepKey) {
         buyG: Math.round(rawAmount(id, v.eaten)),
         rawLabel: ing.rawFactor < 1 ? 'dry' : ing.rawFactor > 1.02 ? 'raw' : null,
         servings: v.dates.length,
-        eatBy,
         shelfDays: ing.shelfDays,
-        // Positive means the fridge life runs out before the window does.
-        shortfallDays: shortfall > 0 ? shortfall : 0,
+        cook,
+        ...split,
       }
     })
     .sort((a, b) => {
@@ -242,7 +317,33 @@ export function buildPrepTasks(state, targets, weekStartKey, prepKey) {
       return order.indexOf(a.category) - order.indexOf(b.category) || a.name.localeCompare(b.name)
     })
 
-  return { prepKey, covered, tasks, portions }
+  const sauceTasks = [...sauceAgg.entries()]
+    .map(([id, v]) => {
+      const sauce = SAUCE_BY_ID[id]
+      const servings = v.dates.length * portions
+      const split = splitBatch(v.dates, sauce.keeps, 1, false)
+      return {
+        id: `${prepKey}:sauce:${id}`,
+        sauceId: id,
+        name: sauce.name,
+        method: sauce.method,
+        goesWith: sauce.goesWith,
+        keeps: sauce.keeps,
+        servings,
+        macros: sauceMacros(id),
+        // Totals for the whole batch, so it can be made in one bowl.
+        components: sauce.components.map((c) => ({
+          id: c.id,
+          name: BY_ID[c.id].name,
+          grams: Math.round(c.grams * servings),
+        })),
+        eatBy: split.eatBy,
+        makeAgainOn: split.cookAgainOn,
+      }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  return { prepKey, covered, tasks, sauceTasks, portions }
 }
 
 // ── Craving stats ───────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ import {
   weekStart,
   weekdayOf,
 } from '../lib/date.js'
+import { FREEZE_LABEL } from '../data/cooking.js'
 import { Empty, Notice, Tick, round } from '../components/ui.jsx'
 import { IconChevronLeft, IconChevronRight, IconPrep, IconTrash } from '../components/Icons.jsx'
 
@@ -40,7 +41,12 @@ export function PrepView() {
   )
 
   const checks = state.prepChecks[prepKey] || {}
-  const doneCount = plan ? plan.tasks.filter((t) => checks[t.id]).length : 0
+  const nowTasks = plan ? plan.tasks.filter((t) => !t.deferred) : []
+  const laterTasks = plan ? plan.tasks.filter((t) => t.deferred) : []
+  const doneCount = nowTasks.filter((t) => checks[t.id]).length
+  const sauceDone = plan ? plan.sauceTasks.filter((t) => checks[t.id]).length : 0
+  const toFreeze = nowTasks.filter((t) => t.freezeServings > 0 && t.canFreeze)
+  const cookPartLater = nowTasks.filter((t) => t.cookAgainOn)
 
   const toggleTask = (task) => {
     const willBeChecked = !checks[task.id]
@@ -65,7 +71,6 @@ export function PrepView() {
   }
 
   const storage = [...state.storageItems].sort((a, b) => a.eatBy.localeCompare(b.eatBy))
-  const shortfalls = plan?.tasks.filter((t) => t.shortfallDays > 0) || []
 
   return (
     <div className="stack stack--lg">
@@ -128,7 +133,7 @@ export function PrepView() {
                 Cook on {WEEKDAY_LONG[weekdayOf(prepKey)]}, {formatDate(prepKey)}
               </h2>
               <span className="dim tnum" style={{ fontSize: '0.75rem' }}>
-                {doneCount}/{plan.tasks.length}
+                {doneCount}/{nowTasks.length}
               </span>
             </div>
             <p className="dim" style={{ fontSize: '0.8125rem', marginBottom: 10 }}>
@@ -138,14 +143,35 @@ export function PrepView() {
               {plan.portions > 1 ? ` · ${plan.portions} portions per meal` : ''}
             </p>
 
-            {plan.tasks.length === 0 ? (
+            {(toFreeze.length > 0 || cookPartLater.length > 0 || laterTasks.length > 0) && (
+              <div style={{ marginBottom: 12 }}>
+                <Notice tone="info">
+                  <b>This window is longer than some of it keeps in the fridge.</b>{' '}
+                  {toFreeze.length > 0 && (
+                    <>
+                      {toFreeze.length} item{toFreeze.length === 1 ? '' : 's'} get cooked in full
+                      today and part-frozen — freeze those portions straight away, while they are
+                      fresh, not once they have already sat for four days. Each one shows its split.{' '}
+                    </>
+                  )}
+                  {(cookPartLater.length > 0 || laterTasks.length > 0) && (
+                    <>
+                      {cookPartLater.length + laterTasks.length} do not survive freezing and are
+                      listed separately below.
+                    </>
+                  )}
+                </Notice>
+              </div>
+            )}
+
+            {nowTasks.length === 0 ? (
               <Empty icon={IconPrep} title="Nothing to cook ahead">
                 Everything on these days is assembled fresh.
               </Empty>
             ) : (
               <div className="card">
                 <ul className="list">
-                  {plan.tasks.map((task) => {
+                  {nowTasks.map((task) => {
                     const checked = !!checks[task.id]
                     const tone = eatByTone(task.eatBy)
                     return (
@@ -164,9 +190,7 @@ export function PrepView() {
                           <span className="list__main">
                             <b>{task.name}</b>
                             <span>
-                              {task.servings} serving{task.servings === 1 ? '' : 's'} ·{' '}
-                              {tone.text}
-                              {task.shortfallDays > 0 ? ' · needs a top-up later' : ''}
+                              {task.servings} serving{task.servings === 1 ? '' : 's'} · {tone.text}
                             </span>
                           </span>
                           <span className="list__side">
@@ -177,6 +201,54 @@ export function PrepView() {
                             <span>{fmtAmount(task.eatenG)} eaten</span>
                           </span>
                         </button>
+
+                        {task.freezeServings > 0 && (
+                          <p className={`prep-split${task.canFreeze ? '' : ' prep-split--warn'}`}>
+                            {task.canFreeze ? (
+                              task.fridgeServings === 0 ? (
+                                <>
+                                  All <b>{fmtAmount(task.freezeG)}</b> goes straight into the freezer
+                                  in {task.freezeServings} portion
+                                  {task.freezeServings === 1 ? '' : 's'} — nothing here is eaten
+                                  before it would spoil in the fridge.
+                                </>
+                              ) : (
+                                <>
+                                  Split it: <b>{fmtAmount(task.fridgeG)}</b> in the fridge for the next{' '}
+                                  {task.fridgeServings} meal{task.fridgeServings === 1 ? '' : 's'},{' '}
+                                  <b>{fmtAmount(task.freezeG)}</b> straight into the freezer in{' '}
+                                  {task.freezeServings} portion
+                                  {task.freezeServings === 1 ? '' : 's'} — while it is fresh, not on
+                                  day four.
+                                </>
+                              )
+                            ) : (
+                              <>
+                                Does not freeze well. Cook <b>{fmtAmount(task.fridgeG)}</b> now; the
+                                remaining {task.freezeServings} portion
+                                {task.freezeServings === 1 ? '' : 's'} wants cooking closer to{' '}
+                                {formatDate(task.cookAgainOn, { weekday: 'long' })}.
+                              </>
+                            )}
+                          </p>
+                        )}
+
+                        {task.cook && (
+                          <details className="prep-how">
+                            <summary>How to cook it</summary>
+                            <div className="prep-how__body">
+                              <p>
+                                <b>{task.cook.best}</b>
+                              </p>
+                              {task.cook.alt && <p className="dim">{task.cook.alt}</p>}
+                              {task.cook.note && <p>{task.cook.note}</p>}
+                              <p className="dim">
+                                {FREEZE_LABEL[task.cook.freezes]} · keeps {task.shelfDays} days in the
+                                fridge
+                              </p>
+                            </div>
+                          </details>
+                        )}
                       </li>
                     )
                   })}
@@ -185,12 +257,107 @@ export function PrepView() {
             )}
           </section>
 
-          {shortfalls.length > 0 && (
-            <Notice tone="warn">
-              <b>Some of this will not keep the whole window.</b>{' '}
-              {shortfalls.map((t) => t.name).join(', ')} — cook the later portions closer to the day
-              rather than all at once on {WEEKDAY_LONG[weekdayOf(prepKey)]}.
-            </Notice>
+          {laterTasks.length > 0 && (
+            <section aria-labelledby="later-head">
+              <div className="section-head">
+                <h2 id="later-head">Cook fresh later in the week</h2>
+              </div>
+              <p className="dim" style={{ fontSize: '0.8125rem', marginBottom: 10 }}>
+                These do not freeze and would not survive until they are needed. Nothing to do today.
+              </p>
+              <div className="card">
+                <ul className="list">
+                  {laterTasks.map((task) => (
+                    <li key={task.id} className="list__item" style={{ cursor: 'default' }}>
+                      <span
+                        className="dot"
+                        style={{ background: `var(--${CATEGORIES[task.category].color})` }}
+                      />
+                      <span className="list__main">
+                        <b>{task.name}</b>
+                        <span>
+                          {task.servings} serving{task.servings === 1 ? '' : 's'} · cook around{' '}
+                          {formatDate(task.firstNeeded, { weekday: 'long' })}
+                        </span>
+                      </span>
+                      <span className="list__side">
+                        <b>{fmtAmount(task.buyG)}{task.rawLabel ? ` ${task.rawLabel}` : ''}</b>
+                        <span>{fmtAmount(task.eatenG)} eaten</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+
+          {plan.sauceTasks.length > 0 && (
+            <section aria-labelledby="sauce-head">
+              <div className="section-head">
+                <h2 id="sauce-head">Sauces to make</h2>
+                <span className="dim tnum" style={{ fontSize: '0.75rem' }}>
+                  {sauceDone}/{plan.sauceTasks.length}
+                </span>
+              </div>
+              <div className="card">
+                <ul className="list">
+                  {plan.sauceTasks.map((task) => {
+                    const checked = !!checks[task.id]
+                    const tone = eatByTone(task.eatBy)
+                    return (
+                      <li key={task.id}>
+                        <button
+                          type="button"
+                          className={`list__item${checked ? ' list__item--checked' : ''}`}
+                          aria-pressed={checked}
+                          onClick={() => dispatch({ type: 'prepCheck', prepKey, taskId: task.id })}
+                        >
+                          <Tick checked={checked} />
+                          <span className="dot" style={{ background: 'var(--condiment)' }} />
+                          <span className="list__main">
+                            <b>{task.name}</b>
+                            <span>
+                              {task.servings} serving{task.servings === 1 ? '' : 's'} · {tone.text}
+                            </span>
+                          </span>
+                          <span className="list__side">
+                            <b>{round(task.macros.kcal)} kcal</b>
+                            <span>per serving</span>
+                          </span>
+                        </button>
+
+                        {task.makeAgainOn && (
+                          <p className="prep-split prep-split--warn">
+                            Only keeps {task.keeps} days — make a second batch around{' '}
+                            {formatDate(task.makeAgainOn, { weekday: 'long' })}.
+                          </p>
+                        )}
+
+                        <details className="prep-how">
+                          <summary>Recipe for {task.servings} serving{task.servings === 1 ? '' : 's'}</summary>
+                          <div className="prep-how__body">
+                            <ul className="recipe">
+                              {task.components.map((c) => (
+                                <li key={c.id}>
+                                  <b className="tnum">{c.grams} g</b>
+                                  <span>{c.name}</span>
+                                </li>
+                              ))}
+                              <li>
+                                <b>—</b>
+                                <span className="dim">salt, pepper and dried herbs to taste</span>
+                              </li>
+                            </ul>
+                            <p>{task.method}</p>
+                            {task.goesWith && <p className="dim">Goes with {task.goesWith.toLowerCase()}.</p>}
+                          </div>
+                        </details>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </section>
           )}
         </>
       )}

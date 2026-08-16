@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useDispatch, useStore, useTargets } from '../state/store.jsx'
 import { ACTIVITY_LEVELS, GOALS, SEXES } from '../lib/nutrition.js'
-import { INGREDIENTS, CATEGORIES } from '../data/ingredients.js'
+import { INGREDIENTS, CATEGORIES, CATEGORY_ORDER } from '../data/ingredients.js'
 import { exportState, importState } from '../lib/storage.js'
 import { WEEKDAY_LONG, WEEKDAY_SHORT, formatTime, minutesOf } from '../lib/date.js'
 import { cmToFtIn, ftInToCm, kgToLb, lbToKg, weightUnit } from '../lib/units.js'
@@ -446,18 +446,20 @@ export function SettingsView() {
       {/* ── Ingredients ──────────────────────────────────────────────────── */}
       <section aria-labelledby="ing-head">
         <div className="section-head">
-          <h2 id="ing-head">Ingredients you do not eat</h2>
+          <h2 id="ing-head">Ingredients you eat</h2>
           <span className="dim" style={{ fontSize: '0.75rem' }}>
-            {state.hidden.length} hidden
+            {state.hidden.length} turned off
           </span>
         </div>
         <p className="dim" style={{ fontSize: '0.8125rem', marginBottom: 10 }}>
-          Hidden ingredients disappear from swap lists. Anything already in a meal stays until you
-          swap it out.
+          Switch off anything you do not eat or do not have. It is removed from your plan
+          straight away — the closest alternative in the same group takes its place — and it stops
+          appearing in swap lists, the shopping list and sauces. A swap you made by hand is left
+          alone.
         </p>
         <div className="card" style={{ padding: 14 }}>
           <div className="stack">
-            {['protein', 'carb', 'vegetable', 'fruit', 'fat', 'liquid'].map((cat) => (
+            {CATEGORY_ORDER.map((cat) => (
               <div key={cat}>
                 <div className="section-head" style={{ marginBottom: 6 }}>
                   <h2>{CATEGORIES[cat].label}</h2>

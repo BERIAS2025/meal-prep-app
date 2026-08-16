@@ -15,6 +15,8 @@ import {
 } from '../lib/date.js'
 import { MealCard } from '../components/MealCard.jsx'
 import { SwapSheet } from '../components/SwapSheet.jsx'
+import { SauceSheet } from '../components/SauceSheet.jsx'
+import { BY_ID } from '../data/ingredients.js'
 import { Sheet } from '../components/Sheet.jsx'
 import { Meter, Notice, Seg, Stat, round } from '../components/ui.jsx'
 import { IconChevronLeft, IconChevronRight, IconClock } from '../components/Icons.jsx'
@@ -25,6 +27,7 @@ export function TodayView({ dateKey, setDateKey }) {
   const targets = useTargets()
   const [minute, setMinute] = useState(nowMinutes())
   const [swapping, setSwapping] = useState(null)
+  const [saucing, setSaucing] = useState(null)
   const [info, setInfo] = useState(null)
 
   // The hero needs to move on its own as the day passes.
@@ -194,6 +197,29 @@ export function TodayView({ dateKey, setDateKey }) {
           predictors of an evening binge — consider swapping up rather than riding it out.
         </Notice>
       )}
+      {day.totals.fat > targets.fat * 1.15 && (
+        <Notice tone="info">
+          <b>
+            The day lands at {round(day.totals.fat)} g fat against a {targets.fat} g target.
+          </b>{' '}
+          That is the food talking, not a mistake — full-fat dairy, oily fish, avocado and olive oil
+          add up. The calories still land on target because carbs give way. If this is your normal
+          way of eating, raise the fat-per-kg slider in Settings so the target matches it.
+        </Notice>
+      )}
+      {day.replacedCount > 0 && (
+        <Notice tone="info">
+          <b>
+            {day.replacedCount} item{day.replacedCount === 1 ? '' : 's'} swapped out automatically.
+          </b>{' '}
+          You marked{' '}
+          {[...new Set(day.meals.flatMap((m) => m.replaced.map((s) => BY_ID[s.replacedFor].name)))].join(
+            ', ',
+          )}{' '}
+          as something you do not have, so the closest alternative is on the plate instead. Change
+          which ingredients you keep in Settings.
+        </Notice>
+      )}
       {targets.clampedToBMR && (
         <Notice tone="alert">
           <b>Target raised to your BMR ({targets.bmr} kcal).</b> The number you set was below what your
@@ -222,6 +248,7 @@ export function TodayView({ dateKey, setDateKey }) {
               meal={meal}
               isNow={isToday && current?.key === meal.key}
               onSwap={(m, slot) => setSwapping({ meal: m, slot })}
+              onSauce={meal.key === 'lunch' || meal.key === 'dinner' ? setSaucing : undefined}
               onToggleDone={(m) => dispatch({ type: 'mealDone', dateKey, meal: m.key })}
               onInfo={setInfo}
             />
@@ -249,6 +276,17 @@ export function TodayView({ dateKey, setDateKey }) {
         onReset={() => {
           dispatch({ type: 'resetSwaps', dateKey, meal: swapping.meal.key })
           setSwapping(null)
+        }}
+      />
+
+      <SauceSheet
+        open={!!saucing}
+        onClose={() => setSaucing(null)}
+        meal={saucing}
+        hidden={state.hidden}
+        onPick={(sauceId) => {
+          dispatch({ type: 'swap', dateKey, meal: saucing.key, role: 'sauce', ingredientId: sauceId })
+          setSaucing(null)
         }}
       />
 

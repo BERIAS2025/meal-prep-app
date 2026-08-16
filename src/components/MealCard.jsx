@@ -4,7 +4,7 @@ import { formatTime } from '../lib/date.js'
 import { IconCheck, IconInfo, IconSwap } from './Icons.jsx'
 import { MacroChips, round } from './ui.jsx'
 
-export function MealCard({ meal, isNow, onSwap, onToggleDone, onInfo }) {
+export function MealCard({ meal, isNow, onSwap, onToggleDone, onInfo, onSauce }) {
   const offTarget = Math.abs(meal.actual.kcal - meal.target.kcal) > meal.target.kcal * 0.12
 
   return (
@@ -52,7 +52,12 @@ export function MealCard({ meal, isNow, onSwap, onToggleDone, onInfo }) {
                 <span className="slot__name">
                   <b>{ing.name}</b>
                   <span className="slot__hint">
-                    {[ing.state !== '—' ? ing.state : null, hint, slot.swapped ? 'swapped' : null]
+                    {[
+                      ing.state !== '—' ? ing.state : null,
+                      hint,
+                      slot.swapped ? 'swapped' : null,
+                      slot.replacedFor ? `instead of ${BY_ID[slot.replacedFor].name}` : null,
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                   </span>
@@ -63,6 +68,29 @@ export function MealCard({ meal, isNow, onSwap, onToggleDone, onInfo }) {
             </li>
           )
         })}
+
+        {onSauce && (
+          <li>
+            <button
+              type="button"
+              className="slot"
+              onClick={() => onSauce(meal)}
+              aria-label={`Sauce: ${meal.sauce.name}. Change it.`}
+            >
+              <span className="dot" style={{ background: 'var(--condiment)' }} />
+              <span className="slot__name">
+                <b>{meal.sauce.id === 'none' ? 'No sauce' : meal.sauce.name}</b>
+                <span className="slot__hint">
+                  {meal.sauce.id === 'none' ? 'tap to add one' : 'sauce · counted in the totals'}
+                </span>
+              </span>
+              <span className="slot__amount tnum">
+                {meal.sauce.id === 'none' ? '—' : `${round(meal.sauceMacros.kcal)} kcal`}
+              </span>
+              <IconSwap size={16} className="slot__swap" />
+            </button>
+          </li>
+        )}
       </ul>
 
       <div className="meal__foot">

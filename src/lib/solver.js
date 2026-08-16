@@ -53,7 +53,13 @@ const FIT_PASSES = [
 
 const ROUNDS = 3
 
-export function solveMeal(slots, target, volumeFactor = 1) {
+/**
+ * @param {object} extras  macros already committed to this meal from something
+ *   that is not a slot — currently the sauce. Counted before protein, carbs
+ *   and fat are fitted, so a 150 kcal sauce shrinks the plate rather than
+ *   quietly adding itself on top of the day's target.
+ */
+export function solveMeal(slots, target, volumeFactor = 1, extras = EMPTY_MACROS) {
   const out = slots.map((s) => ({ ...s, grams: 0 }))
 
   // 1–3. Fixed-volume slots: set once and left alone.
@@ -71,7 +77,7 @@ export function solveMeal(slots, target, volumeFactor = 1) {
     if (!group.length) return
     const fromOthers = out
       .filter((s) => s.category !== category)
-      .reduce((acc, s) => addMacros(acc, macrosFor(s.id, s.grams)), EMPTY_MACROS)
+      .reduce((acc, s) => addMacros(acc, macrosFor(s.id, s.grams)), extras)
     const remaining = target[macro] - fromOthers[macro]
     const totalWeight = group.reduce((n, s) => n + (s.weight ?? 1), 0)
     for (const slot of group) {
@@ -86,7 +92,7 @@ export function solveMeal(slots, target, volumeFactor = 1) {
 
   for (let round = 0; round < ROUNDS; round++) FIT_PASSES.forEach(fitPass)
 
-  const totalOf = () => out.reduce((acc, s) => addMacros(acc, macrosFor(s.id, s.grams)), EMPTY_MACROS)
+  const totalOf = () => out.reduce((acc, s) => addMacros(acc, macrosFor(s.id, s.grams)), extras)
   let actual = totalOf()
 
   // Safety valve. An ingredient can be a poor fit for the macro its slot was

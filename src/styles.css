@@ -37,6 +37,7 @@
   --veg: #256b45;
   --fruit: #a13a55;
   --liquid: #1a6a78;
+  --condiment: #7a6320;
 
   --shadow: 0 1px 2px rgb(20 25 20 / 0.06), 0 8px 24px -12px rgb(20 25 20 / 0.18);
   --shadow-lg: 0 2px 6px rgb(20 25 20 / 0.08), 0 24px 48px -20px rgb(20 25 20 / 0.28);
@@ -81,6 +82,7 @@
     --veg: #6fcf97;
     --fruit: #ef94a4;
     --liquid: #79cddc;
+    --condiment: #d8c26a;
 
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
     --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.5), 0 24px 48px -20px rgb(0 0 0 / 0.7);
@@ -116,6 +118,7 @@
   --veg: #6fcf97;
   --fruit: #ef94a4;
   --liquid: #79cddc;
+  --condiment: #d8c26a;
 
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.5), 0 24px 48px -20px rgb(0 0 0 / 0.7);
@@ -908,6 +911,54 @@ table.week th[scope='row'] { font-weight: 650; white-space: nowrap; }
 .list__side { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .list__side b { display: block; font-weight: 700; font-size: 0.9375rem; }
 .list__side span { font-size: 0.6875rem; color: var(--text-3); }
+
+/* Prep: the fridge/freezer split and the how-to-cook disclosure */
+.prep-split {
+  margin: 0;
+  padding: 0 14px 10px 50px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.prep-split b { color: var(--text); font-variant-numeric: tabular-nums; }
+.prep-split--warn { color: var(--warn); }
+.prep-split--warn b { color: var(--warn); }
+
+.prep-how { border-bottom: 1px solid var(--border); }
+.prep-how > summary {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 14px 10px 50px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--accent-text);
+  cursor: pointer;
+  list-style: none;
+}
+.prep-how > summary::-webkit-details-marker { display: none; }
+.prep-how > summary::before {
+  content: '▸';
+  margin-right: 6px;
+  font-size: 0.75rem;
+}
+.prep-how[open] > summary::before { content: '▾'; }
+.prep-how__body {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px 50px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.prep-how__body p { margin: 0; }
+
+.recipe { display: grid; gap: 3px; margin-bottom: 4px; }
+.recipe li { display: flex; gap: 10px; }
+.recipe b { min-width: 62px; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+@media (max-width: 480px) {
+  .prep-split, .prep-how > summary, .prep-how__body { padding-left: 24px; }
+}
 
 .tick {
   width: 24px; height: 24px;

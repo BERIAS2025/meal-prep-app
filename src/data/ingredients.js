@@ -21,7 +21,12 @@ export const CATEGORIES = {
   fruit: { label: 'Fruit', short: 'F', color: 'fruit' },
   fat: { label: 'Fat', short: 'Fa', color: 'fat' },
   liquid: { label: 'Liquid', short: 'L', color: 'liquid' },
+  // Sauce and dressing components. No meal slot accepts this category, so
+  // these never turn up in a swap list — they only reach a plate via a sauce.
+  condiment: { label: 'Condiments & herbs', short: 'Co', color: 'condiment' },
 }
+
+export const CATEGORY_ORDER = ['protein', 'carb', 'vegetable', 'fruit', 'fat', 'liquid', 'condiment']
 
 /** @type {Array<{id:string,name:string,category:keyof typeof CATEGORIES,state:string,kcal:number,protein:number,fat:number,carbs:number,fiber:number,rawFactor:number,shelfDays?:number,piece?:number,note?:string}>} */
 export const INGREDIENTS = [
@@ -35,6 +40,7 @@ export const INGREDIENTS = [
   { id: 'tuna_canned', name: 'Tuna, canned in water', category: 'protein', state: 'drained', kcal: 116, protein: 26, fat: 0.8, carbs: 0, fiber: 0, rawFactor: 1, shelfDays: 2, piece: 120, note: 'Shelf-stable until opened' },
   { id: 'whole_egg', name: 'Whole egg', category: 'protein', state: 'cooked', kcal: 155, protein: 13, fat: 11, carbs: 1.1, fiber: 0, rawFactor: 1, shelfDays: 4, piece: 50 },
   { id: 'egg_white', name: 'Egg white', category: 'protein', state: 'cooked', kcal: 52, protein: 11, fat: 0.2, carbs: 0.7, fiber: 0, rawFactor: 1, shelfDays: 4, piece: 33 },
+  { id: 'greek_yogurt_whole', name: 'Greek yogurt, whole milk', category: 'protein', state: 'as eaten', kcal: 97, protein: 9, fat: 5, carbs: 4, fiber: 0, rawFactor: 1, shelfDays: 7 },
   { id: 'greek_yogurt', name: 'Greek yogurt, 0%', category: 'protein', state: 'as eaten', kcal: 59, protein: 10, fat: 0.4, carbs: 3.6, fiber: 0, rawFactor: 1, shelfDays: 7 },
   { id: 'cottage_cheese', name: 'Cottage cheese, low fat', category: 'protein', state: 'as eaten', kcal: 72, protein: 12, fat: 1, carbs: 3.4, fiber: 0, rawFactor: 1, shelfDays: 5 },
   { id: 'whey_isolate', name: 'Whey protein isolate', category: 'protein', state: 'powder', kcal: 375, protein: 80, fat: 2, carbs: 6, fiber: 0, rawFactor: 1, piece: 30, note: 'Check your tub — brands vary' },
@@ -84,7 +90,20 @@ export const INGREDIENTS = [
   { id: 'chia_seeds', name: 'Chia seeds', category: 'fat', state: 'dry', kcal: 486, protein: 17, fat: 31, carbs: 42, fiber: 34.4, rawFactor: 1, piece: 12 },
   { id: 'parmesan', name: 'Parmesan cheese', category: 'fat', state: '—', kcal: 431, protein: 38, fat: 29, carbs: 4.1, fiber: 0, rawFactor: 1, shelfDays: 21 },
   { id: 'oat_milk', name: 'Oat milk, unsweetened', category: 'liquid', state: 'as eaten', kcal: 40, protein: 0.8, fat: 1.5, carbs: 6, fiber: 0.8, rawFactor: 1, shelfDays: 7, note: 'Brand varies — check your carton' },
+
+  // ── Condiments & herbs (sauce components only) ─────────────────────────────
+  { id: 'parsley', name: 'Parsley, fresh', category: 'condiment', state: 'raw', kcal: 36, protein: 3, fat: 0.8, carbs: 6.3, fiber: 3.3, rawFactor: 1.3, shelfDays: 5 },
+  { id: 'lemon_juice', name: 'Lemon juice', category: 'condiment', state: 'as eaten', kcal: 22, protein: 0.35, fat: 0.24, carbs: 6.9, fiber: 0.3, rawFactor: 2.2, shelfDays: 4, buyLabel: 'buy whole lemons' },
+  { id: 'red_wine_vinegar', name: 'Red wine vinegar', category: 'condiment', state: '—', kcal: 19, protein: 0.04, fat: 0, carbs: 0.27, fiber: 0, rawFactor: 1 },
+  { id: 'dijon_mustard', name: 'Dijon mustard', category: 'condiment', state: '—', kcal: 66, protein: 4.4, fat: 3.6, carbs: 5.8, fiber: 3.3, rawFactor: 1 },
 ]
+
+/**
+ * Salt, pepper, dried oregano, chili flakes and similar are used at 1–3 g and
+ * contribute a rounding error, so they are deliberately not modelled. Season
+ * freely; it will not move any number in this app.
+ */
+export const FREE_SEASONINGS = ['Salt', 'Black pepper', 'Dried oregano', 'Chili flakes', 'Paprika', 'Cumin']
 
 export const BY_ID = Object.fromEntries(INGREDIENTS.map((i) => [i.id, i]))
 
@@ -97,11 +116,47 @@ export function byCategory(category) {
 }
 
 /**
+ * Closest stand-in for an ingredient you do not have, within its own category.
+ * Distance is per-100 g macro difference, each axis scaled by a typical spread
+ * for that macro so no single one dominates. White potato lands on sweet
+ * potato; banana lands on the next most carb-dense fruit.
+ *
+ * Returns null when the whole category has been hidden — the caller keeps the
+ * original rather than emptying the slot.
+ */
+export function nearestAvailable(id, hiddenIds) {
+  const src = BY_ID[id]
+  if (!src) return null
+  const hidden = hiddenIds instanceof Set ? hiddenIds : new Set(hiddenIds)
+  const pool = INGREDIENTS.filter((i) => i.category === src.category && !hidden.has(i.id))
+  if (!pool.length) return null
+
+  const distance = (a, b) =>
+    Math.hypot(
+      (a.protein - b.protein) / 20,
+      (a.carbs - b.carbs) / 30,
+      (a.fat - b.fat) / 20,
+      (a.kcal - b.kcal) / 200,
+    )
+
+  return pool.reduce((best, i) => (distance(src, i) < distance(src, best) ? i : best)).id
+}
+
+/**
  * Name trimmed for use inside a dish title: drops the parenthetical and
  * anything after a comma. "Salmon (Atlantic, farmed)" → "Salmon",
  * "Greek yogurt, 0%" → "Greek yogurt".
  */
+/** Names that read badly inside a dish title however they are trimmed. */
+const TITLE_NAME = {
+  whey_isolate: 'Whey',
+  ground_beef_90: 'Beef',
+  granola: 'Granola',
+  egg_white: 'Egg whites',
+}
+
 export function shortName(id) {
+  if (TITLE_NAME[id]) return TITLE_NAME[id]
   const name = BY_ID[id]?.name
   if (!name) return ''
   return name
