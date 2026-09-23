@@ -28,9 +28,9 @@ export const GOALS = [
 ]
 
 export const DAY_TYPES = [
-  { id: 'rest', label: 'Rest', short: 'Rest', desc: 'No training' },
+  { id: 'rest', label: 'Ruhetag', short: 'Ruhe', desc: 'No training' },
   { id: 'cardio', label: 'Cardio only', short: 'Cardio', desc: 'Morning cardio, no strength work' },
-  { id: 'strength', label: 'Strength', short: 'Strength', desc: 'Morning cardio plus strength session' },
+  { id: 'strength', label: 'Kraft', short: 'Kraft', desc: 'Morning strength session' },
 ]
 
 export const EXTRA_ACTIVITIES = [
@@ -104,36 +104,22 @@ export function calcTargets(profile) {
  *   · dinner carries about half the day's carbs, more on strength days
  *   · the shake exists to close the protein gap, not to fuel anything
  */
-export const MEAL_SPLITS = {
-  strength: {
-    breakfast: { protein: 0.18, carbs: 0.18, fat: 0.2 },
-    lunch: { protein: 0.3, carbs: 0.17, fat: 0.28 },
-    snack: { protein: 0.12, carbs: 0.15, fat: 0.1 },
-    shake: { protein: 0.15, carbs: 0.1, fat: 0.03 },
-    dinner: { protein: 0.25, carbs: 0.4, fat: 0.39 },
-  },
-  cardio: {
-    breakfast: { protein: 0.2, carbs: 0.21, fat: 0.22 },
-    lunch: { protein: 0.33, carbs: 0.2, fat: 0.3 },
-    snack: { protein: 0.15, carbs: 0.17, fat: 0.1 },
-    dinner: { protein: 0.32, carbs: 0.42, fat: 0.38 },
-  },
-  rest: {
-    breakfast: { protein: 0.2, carbs: 0.22, fat: 0.22 },
-    lunch: { protein: 0.33, carbs: 0.21, fat: 0.3 },
-    snack: { protein: 0.15, carbs: 0.18, fat: 0.1 },
-    dinner: { protein: 0.32, carbs: 0.39, fat: 0.38 },
-  },
-}
+const HYBRID_SPLIT = {
+  breakfast: {protein:0.25, carbs:0.30, fat:0.22},
+  lunch: {protein:0.30, carbs:0.30, fat:0.28},
+  snack: {protein:0.20, carbs:0.15, fat:0.15},
+  dinner: {protein:0.25, carbs:0.25, fat:0.35},
+};
+export const MEAL_SPLITS = {strength: HYBRID_SPLIT,cardio: HYBRID_SPLIT,rest: HYBRID_SPLIT}
 
 export const MEAL_ORDER = ['breakfast', 'lunch', 'snack', 'shake', 'dinner']
 
 export const MEAL_LABELS = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  snack: 'Afternoon snack',
+  breakfast: 'Frühstück',
+  lunch: 'Mittagessen',
+  snack: 'Snack',
   shake: 'Post-training shake',
-  dinner: 'Dinner',
+  dinner: 'Abendessen',
 }
 
 /** Which meal slots exist on a given day type, in time order. */

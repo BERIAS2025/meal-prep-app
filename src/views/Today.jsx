@@ -146,6 +146,9 @@ export function TodayView({ dateKey, setDateKey }) {
         </div>
       </section>
 
+      <Notice tone="info">Training morgens, Freitag und Sonntag frei. Schoko-Whey, Costco-Gerichte und Getränke unter <b>Produkte</b> mit festen Portionen planen. Eigene Hauptmahlzeiten ersetzen den Vorschlag; Extras kommen hinzu.</Notice>
+      {Math.abs(day.totals.kcal-targets.kcal)>targets.kcal*0.1 && <Notice tone="warn">Geplant: {round(day.totals.kcal)} kcal bei {targets.kcal} kcal Ziel. Die Abweichung ist größer als 10 %. Portionen und zusätzliche Getränke prüfen.</Notice>}
+      {day.totals.protein<targets.protein*0.9 && <Notice tone="warn">Der Plan liegt unter 90 % deines Proteinziels. Eine passende Proteinquelle oder Schoko-Whey in einer Mahlzeit ergänzen.</Notice>}
       {/* Totals */}
       <section aria-labelledby="totals-head">
         <div className="section-head">
@@ -193,8 +196,7 @@ export function TodayView({ dateKey, setDateKey }) {
       )}
       {day.meals.some((m) => m.isLow) && (
         <Notice tone="warn">
-          <b>One meal is running light.</b> Undereating earlier in the day is one of the most reliable
-          predictors of an evening binge — consider swapping up rather than riding it out.
+          <b>One meal is running light.</b> Prüfe Hunger und Portionsgröße und passe die Mahlzeit bei Bedarf an.
         </Notice>
       )}
       {day.totals.fat > targets.fat * 1.15 && (
@@ -202,9 +204,7 @@ export function TodayView({ dateKey, setDateKey }) {
           <b>
             The day lands at {round(day.totals.fat)} g fat against a {targets.fat} g target.
           </b>{' '}
-          That is the food talking, not a mistake — full-fat dairy, oily fish, avocado and olive oil
-          add up. The calories still land on target because carbs give way. If this is your normal
-          way of eating, raise the fat-per-kg slider in Settings so the target matches it.
+          Prüfe die tatsächliche Kalorienbilanz, Portionen und Etikettwerte. Fett- und Kohlenhydratanteile dürfen variieren; erhöhe das Ziel nicht allein, um eine Abweichung verschwinden zu lassen.
         </Notice>
       )}
       {day.replacedCount > 0 && (
@@ -250,6 +250,7 @@ export function TodayView({ dateKey, setDateKey }) {
               onSwap={(m, slot) => setSwapping({ meal: m, slot })}
               onSauce={meal.key === 'lunch' || meal.key === 'dinner' ? setSaucing : undefined}
               onToggleDone={(m) => dispatch({ type: 'mealDone', dateKey, meal: m.key })}
+              onRemove={(m) => dispatch({type:"personalRemove",dateKey,meal:m.key})}
               onInfo={setInfo}
             />
           ))}

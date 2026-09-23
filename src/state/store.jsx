@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
 import { DEFAULT_STATE, loadState, saveState, uid } from '../lib/storage.js'
+import { DEFAULT_SCHEDULE, DEFAULT_WEEK_TYPES } from '../data/templates.js'
+import { validProduct } from '../lib/personal.js'
 import { calcTargets } from '../lib/nutrition.js'
 
 const StateCtx = createContext(null)
@@ -25,6 +27,15 @@ function reducer(state, action) {
     case 'hydrate':
       return action.state
 
+    case 'hybridPreset':
+      return {...state,schedule:{...state.schedule,...DEFAULT_SCHEDULE},weekTypes:{...DEFAULT_WEEK_TYPES},prepDays:[3,6]}
+    case 'personalProduct':
+      if(!validProduct(action.product)) return state
+      return {...state,personalProducts:[...state.personalProducts.filter(p=>p.id!==action.product.id),action.product]}
+    case 'personalPlan':
+      return withDay(state,action.dateKey,d=>({...d,customMeals:{...(d.customMeals||{}),[action.meal==='extra'?'extra_'+uid():action.meal]:{...action.entry,time:action.time}},done:{...(d.done||{}),[action.meal]:false}}))
+    case 'personalRemove':
+      return withDay(state,action.dateKey,d=>{const c={...(d.customMeals||{})};delete c[action.meal];return {...d,customMeals:c,done:{...(d.done||{}),[action.meal]:false}}})
     case 'profile':
       return { ...state, profile: { ...state.profile, ...action.patch } }
 

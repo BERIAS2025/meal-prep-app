@@ -4,10 +4,11 @@
  * Settings offers a JSON export/import as a manual backup.
  */
 
+import { PERSONAL_PRODUCTS } from '../data/personal.js'
 import { DEFAULT_SCHEDULE, DEFAULT_WEEK_TYPES } from '../data/templates.js'
 
 export const STORAGE_KEY = 'mealprep.state.v1'
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export const DEFAULT_STATE = {
   version: SCHEMA_VERSION,
@@ -19,17 +20,17 @@ export const DEFAULT_STATE = {
     heightCm: 180,
     weightKg: 90,
     bodyFatPct: null,
-    activityLevel: 'high',
-    goal: 'moderate',
-    manualCalories: null,
-    proteinPerKg: 2,
+    activityLevel: 'moderate',
+    goal: 'slow',
+    manualCalories: 2500,
+    proteinPerKg: 1.8,
     fatPerKg: 0.8,
   },
   schedule: { ...DEFAULT_SCHEDULE },
   weekTypes: { ...DEFAULT_WEEK_TYPES },
   dayOverrides: {},
   cravings: [],
-  prepDays: [0, 3],
+  prepDays: [3, 6],
   portions: 1,
   hidden: [],
   prepChecks: {},
@@ -37,6 +38,7 @@ export const DEFAULT_STATE = {
   shoppingChecks: {},
   theme: 'auto',
   weighIns: [],
+  personalProducts: PERSONAL_PRODUCTS,
 }
 
 /** Shallow-merge defaults so a state saved by an older build still loads. */
@@ -50,6 +52,7 @@ function hydrate(raw) {
     schedule: { ...DEFAULT_STATE.schedule, ...(raw.schedule || {}) },
     weekTypes: { ...DEFAULT_STATE.weekTypes, ...(raw.weekTypes || {}) },
     dayOverrides: raw.dayOverrides || {},
+    personalProducts: Array.isArray(raw.personalProducts) ? raw.personalProducts : PERSONAL_PRODUCTS,
     cravings: Array.isArray(raw.cravings) ? raw.cravings : [],
     prepDays: Array.isArray(raw.prepDays) ? raw.prepDays : DEFAULT_STATE.prepDays,
     hidden: Array.isArray(raw.hidden) ? raw.hidden : [],

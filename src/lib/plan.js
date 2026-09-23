@@ -2,6 +2,7 @@
  * Derived plan data. Views read from here; nothing in here mutates state.
  */
 
+import { customMeal, personalDemand } from './personal.js'
 import { WEEK_TEMPLATES, MEAL_TIME_KEY } from '../data/templates.js'
 import { RATIONALE, STRENGTH_DINNER_NOTE } from '../data/rationale.js'
 import { MEAL_LABELS, mealsForDayType, mealTargets } from './nutrition.js'
@@ -61,6 +62,7 @@ export function buildDay(state, targets, dateKey) {
   const hidden = new Set(state.hidden || [])
 
   const meals = mealsForDayType(dayType).map((mealKey) => {
+    if (override.customMeals?.[mealKey]) return customMeal(override.customMeals[mealKey], mealKey, state.schedule[MEAL_TIME_KEY[mealKey]], done[mealKey], mealTargets(dayType, mealKey, targets))
     const tpl = template.meals[mealKey]
     const slots = tpl.slots.map((s) => {
       const swapped = swaps[`${mealKey}.${s.role}`]
@@ -113,6 +115,10 @@ export function buildDay(state, targets, dateKey) {
     }
   })
 
+  for (const [key, entry] of Object.entries(override.customMeals || {})) {
+    if (key.startsWith('extra_')) meals.push(customMeal(entry,key,entry.time || '12:20',done[key]))
+  }
+  meals.sort((a,b)=>a.minutes-b.minutes)
   const totals = meals.reduce((acc, m) => addMacros(acc, m.actual), EMPTY_MACROS)
   const eaten = meals.filter((m) => m.done).reduce((acc, m) => addMacros(acc, m.actual), EMPTY_MACROS)
 
@@ -202,7 +208,7 @@ export function buildShoppingList(state, targets, weekStartKey) {
     .map((cat) => ({ category: cat, items: items.filter((i) => i.category === cat) }))
     .filter((g) => g.items.length)
 
-  return { groups, items, dayCount: days.length, portions }
+  return { groups, items, dayCount: days.length, portions, personal: personalDemand(days,portions) }
 }
 
 // ── Prep day checklist ──────────────────────────────────────────────────────
@@ -220,8 +226,10 @@ export function prepCoverage(state, weekStartKey, prepKey) {
   const all = prepDayKeys(state, weekStartKey)
   const idx = all.indexOf(prepKey)
   if (idx === -1) return [prepKey]
-  const nextKey = all[idx + 1]
-  const end = nextKey ? daysBetween(prepKey, nextKey) : 7 - daysBetween(weekStartKey, prepKey)
+  let end = 7
+  for(let offset=1;offset<=7;offset++) {
+    if(state.prepDays.includes(weekdayOf(addDays(prepKey,offset)))) { end=offset; break }
+  }
   return Array.from({ length: Math.max(1, end) }, (_, i) => addDays(prepKey, i))
 }
 

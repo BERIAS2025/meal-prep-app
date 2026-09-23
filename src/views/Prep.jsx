@@ -73,7 +73,7 @@ export function PrepView() {
   const storage = [...state.storageItems].sort((a, b) => a.eatBy.localeCompare(b.eatBy))
 
   return (
-    <div className="stack stack--lg">
+    <div className="stack stack--lg"><Notice tone="info">Eigene Costco-Mahlzeiten werden nach Packungsanleitung frisch zubereitet und sind nicht in den automatischen Koch- und Haltbarkeitsaufgaben enthalten. Ihr Bedarf steht in der Einkaufsliste. Der Hybrid-Rhythmus nutzt Mittwoch und Samstag statt Sonntag.</Notice>
       <div className="row row--between">
         <button
           type="button"

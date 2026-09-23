@@ -23,6 +23,7 @@ export function ShoppingView() {
   const checkedCount = list.items.filter((i) => checks[i.id]).length
 
   const copyList = async () => {
+    const own = (list.personal || []).map(i=>`${i.name}: ${i.amount.toFixed(2)} × ${i.serving}`).join('\n')
     const text = list.groups
       .map(
         (g) =>
@@ -32,7 +33,7 @@ export function ShoppingView() {
       .join('\n\n')
     try {
       await navigator.clipboard.writeText(
-        `Shopping list ${formatDate(startKey)} – ${formatDate(addDays(startKey, 6))}\n\n${text}`,
+        `Shopping list ${formatDate(startKey)} – ${formatDate(addDays(startKey, 6))}\n\n${text}\n\nEigene Produkte (Wochenbedarf, Vorräte selbst abziehen):\n${own}`,
       )
       setCopied(true)
       setTimeout(() => setCopied(false), 2200)
@@ -110,6 +111,7 @@ export function ShoppingView() {
         </span>
       </div>
 
+      {!!list.personal?.length && <section className="card personal-card"><h2>Eigene Produkte: Wochenbedarf</h2><p>Bedarf laut geplanten Portionen. Vorräte selbst abziehen; insbesondere die bereits gekauften Paulaner-Dosen und das Hackfleisch. Keine Live-Bestandsverwaltung.</p><ul>{list.personal.map((i,n)=><li key={n}><b>{i.name}</b>: {i.amount.toFixed(2)} × {i.serving}</li>)}</ul></section>}
       {list.groups.map((group) => (
         <section key={group.category} aria-labelledby={`shop-${group.category}`}>
           <div className="section-head">

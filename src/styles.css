@@ -1146,5 +1146,38 @@ table.week th[scope='row'] { font-weight: 650; white-space: nowrap; }
   color: var(--accent-text);
 }
 
+/* Ingredient include/exclude pills.
+   These carry the opposite polarity to the other pills on the page — pressed
+   means EXCLUDED — so they never rely on brightness alone to say which is
+   which. A tick or a cross, and a line through the name when it is out. */
+.pill--ing {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+}
+.pill--ing[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--alert) 45%, transparent);
+  background: var(--alert-soft);
+  color: var(--text-2);
+}
+.pill--ing .pill__mark {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.pill--excluded .pill__mark { background: var(--alert); color: var(--bg-elev); }
+.pill--excluded .pill__label { text-decoration: line-through; opacity: 0.75; }
+
 .ing-grid { display: grid; gap: 4px; }
 @media (min-width: 620px) { .ing-grid { grid-template-columns: 1fr 1fr; } }
+
+.personal-card{padding:18px;line-height:1.6}.personal-card h2{font-size:1.15rem;margin-bottom:12px}.personal-card p{margin:10px 0}.personal-products{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:12px 0}.personal-product{display:flex;flex-direction:column;align-items:flex-start;white-space:normal;text-align:left;height:auto}.personal-product span{font-size:.75rem;opacity:.75}.personal-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.personal-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 36px;gap:8px;align-items:end}.personal-card label{font-size:.85rem;display:block}.personal-card small{display:block}.personal-card .input{width:100%;min-width:0}.personal-card li{margin-left:20px}.personal-card .btn{white-space:normal}.personal-card .notice{overflow-wrap:anywhere}@media(max-width:480px){.personal-products{grid-template-columns:1fr}.personal-row{grid-template-columns:minmax(0,1fr) 90px 32px}.personal-card{padding:14px}}

@@ -7,6 +7,7 @@ import { WeekView } from './views/Week.jsx'
 import { ShoppingView } from './views/Shopping.jsx'
 import { PrepView } from './views/Prep.jsx'
 import { CravingsView } from './views/Cravings.jsx'
+import { PersonalView } from './views/Personal.jsx'
 import { SettingsView } from './views/Settings.jsx'
 import {
   IconBowl,
@@ -19,15 +20,16 @@ import {
 } from './components/Icons.jsx'
 
 const TABS = [
-  { id: 'today', label: 'Today', icon: IconToday, title: 'Today' },
-  { id: 'week', label: 'Week', icon: IconWeek, title: 'This week' },
-  { id: 'shop', label: 'Shop', icon: IconShop, title: 'Shopping list' },
+  { id: 'today', label: 'Heute', icon: IconToday, title: 'Heute' },
+  { id: 'week', label: 'Woche', icon: IconWeek, title: 'This week' },
+  { id: 'shop', label: 'Einkauf', icon: IconShop, title: 'Shopping list' },
   { id: 'prep', label: 'Prep', icon: IconPrep, title: 'Prep & fridge' },
-  { id: 'log', label: 'Log', icon: IconLog, title: 'Craving log' },
+  { id: 'personal', label: 'Produkte', icon: IconBowl, title: 'Meine Produkte' },
 ]
 
 const SUBTITLES = {
-  today: 'What to eat, when, and why',
+  personal: 'Costco, Mahlzeiten und Getränke',
+  today: 'Dein Essen passend zum Training',
   week: 'Seven days, editable',
   shop: 'Raw amounts to buy',
   prep: 'Cook ahead and eat-by dates',
@@ -86,7 +88,7 @@ export function App() {
   if (!state.onboarded) return <Onboarding />
 
   const active = TABS.find((t) => t.id === tab)
-  const heading = tab === 'settings' ? 'Settings' : active?.title
+  const heading = tab === 'settings' ? 'Einstellungen' : tab === 'log' ? 'Craving log' : active?.title
 
   return (
     <div className="app">
@@ -97,7 +99,7 @@ export function App() {
       <nav className="tabbar" aria-label="Main">
         <div className="tabbar__brand">
           <IconBowl size={22} />
-          Meal plan
+          BERIAS Meal Plan
         </div>
         {TABS.map((t) => (
           <button
@@ -161,6 +163,7 @@ export function App() {
           {tab === 'prep' && <PrepView />}
           {tab === 'log' && <CravingsView logOpen={logOpen} setLogOpen={setLogOpen} />}
           {tab === 'settings' && <SettingsView />}
+          {tab === 'personal' && <PersonalView initialDate={dateKey} />}
         </main>
       </div>
 

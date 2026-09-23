@@ -106,7 +106,7 @@ export const WEEK_TEMPLATES = [
       dinner: {
         title: 'Beef, sweet potato & broccoli',
         sauce: 'chimichurri',
-        slots: [protein('protein', 'ground_beef_90'), carb('carb', 'sweet_potato'), veg('veg', 'broccoli', 180), veg('veg2', 'garlic', 6), fat('fat', 'olive_oil', 25)],
+        slots: [protein('protein', 'ground_beef_90'), carb('carb', 'sweet_potato'), veg('veg', 'broccoli', 180), ({...veg('veg2', 'garlic', 3), min: 1, max: 6}), fat('fat', 'olive_oil', 25)],
       },
     },
   },
@@ -224,24 +224,16 @@ export const WEEK_TEMPLATES = [
   },
 ]
 
-export const DEFAULT_WEEK_TYPES = {
-  0: 'strength', // Sunday
-  1: 'cardio',
-  2: 'strength', // Tuesday
-  3: 'cardio',
-  4: 'cardio',
-  5: 'strength', // Friday
-  6: 'cardio',
-}
+export const DEFAULT_WEEK_TYPES = {0:'rest',1:'strength',2:'cardio',3:'strength',4:'cardio',5:'rest',6:'cardio'}
 
 export const DEFAULT_SCHEDULE = {
   cardio: '07:00',
-  breakfast: '08:00',
-  lunch: '12:30',
-  snack: '15:30',
-  strength: '17:30',
-  shake: '18:30',
-  dinner: '19:00',
+  breakfast: '08:10',
+  lunch: '12:20',
+  snack: '16:00',
+  strength: '07:00',
+  shake: '08:10',
+  dinner: '18:30',
   bed: '22:30',
 }
 

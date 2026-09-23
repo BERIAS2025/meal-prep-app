@@ -30,15 +30,7 @@ self.addEventListener('install', (event) => {
       const cache = await caches.open(CACHE)
       // addAll fails the whole install if any single request fails; add them
       // individually so one bad asset cannot leave the app with no cache.
-      await Promise.all(
-        PRECACHE.map(async (url) => {
-          try {
-            await cache.add(new Request(url, { cache: 'reload' }))
-          } catch {
-            /* skip this one */
-          }
-        }),
-      )
+      await cache.addAll(PRECACHE.map(url => new Request(url, { cache: 'reload' })))
       await self.skipWaiting()
     })(),
   )

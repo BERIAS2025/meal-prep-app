@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {DEFAULT_STATE,exportState,importState} from '../src/lib/storage.js';
+import {calcTargets} from '../src/lib/nutrition.js';
+import {buildDay,buildShoppingList,prepCoverage,buildPrepTasks} from '../src/lib/plan.js';
+import {mealFromProducts,validProduct} from '../src/lib/personal.js';
+const s=structuredClone(DEFAULT_STATE),t=calcTargets(s.profile),date='2026-09-21';
+const normal=buildDay(s,t,date);
+assert.equal(normal.dayType,'strength');assert.equal(normal.meals.length,4);assert.equal(t.kcal,2500);assert.equal(t.protein,162);
+assert.equal(buildDay(s,t,'2026-09-27').dayType,'rest');
+assert.throws(()=>mealFromProducts(s.personalProducts,[{id:'paulaner',amount:1}],'Getränk'));
+const p={id:'test',name:'Testprodukt',serving:'100 ml',kcal:50,protein:2,carbs:6,fat:2,fiber:1,verified:true};
+assert(validProduct(p));assert(!validProduct({...p,kcal:''}));assert(!validProduct({...p,kcal:-1}));
+const entry=mealFromProducts([p],[{id:'test',amount:2}],'Testmahlzeit');assert.equal(entry.actual.kcal,100);
+for(const amount of [0,-1,NaN,Infinity,101])assert.throws(()=>mealFromProducts([p],[{id:'test',amount}],'Test'));
+s.dayOverrides[date]={customMeals:{breakfast:entry,extra_drink:{...entry,time:'10:00'}}};
+const updated=buildDay(s,t,date);
+const baseBreakfast=normal.meals.find(m=>m.key==='breakfast').actual.kcal;
+assert(Math.abs(updated.totals.kcal-(normal.totals.kcal-baseBreakfast+200))<0.001);
+assert.equal(updated.meals.find(m=>m.key==='breakfast').slots.length,0);
+s.dayOverrides[date].done={extra_drink:true};assert.equal(buildDay(s,t,date).eaten.kcal,100);
+const list=buildShoppingList(s,t,'2026-09-20');assert.equal(list.personal[0].amount,4);
+assert.deepEqual(prepCoverage(s,'2026-09-20','2026-09-26'),['2026-09-26','2026-09-27','2026-09-28','2026-09-29']);
+assert.equal(buildPrepTasks(s,t,'2026-09-20','2026-09-26').tasks.some(x=>x.id==='test'),false);
+s.personalProducts=[p];const restored=importState(exportState(s));assert.deepEqual(restored.personalProducts,[p]);assert.deepEqual(buildDay(restored,t,date).totals,buildDay(s,t,date).totals);
+const legacy=importState(JSON.stringify({version:1,profile:{weightKg:88},cravings:[{id:'old'}]}));assert.equal(legacy.profile.weightKg,88);assert.equal(legacy.cravings[0].id,'old');assert(legacy.personalProducts.length>=16);
+for(let d=21;d<=27;d++){const day=buildDay(DEFAULT_STATE,t,`2026-09-${d}`);assert(Number.isFinite(day.totals.kcal));for(const m of day.meals){for(const slot of m.slots){if(slot.id==='garlic')assert(slot.grams<=6);}}console.log(day.dateKey,day.dayType,Math.round(day.totals.kcal),'kcal',Math.round(day.totals.protein),'g protein');}
+console.log('PASS: hybrid defaults, unknown labels, portions, replacement without double counting, extra totals, eaten totals, shopping, week-boundary prep, backup and legacy data.');

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useDispatch, useStore, useTargets } from '../state/store.jsx'
 import { ACTIVITY_LEVELS, GOALS, SEXES } from '../lib/nutrition.js'
-import { INGREDIENTS, CATEGORIES, CATEGORY_ORDER } from '../data/ingredients.js'
+import { INGREDIENTS, CATEGORIES, CATEGORY_ORDER, BY_ID } from '../data/ingredients.js'
 import { exportState, importState } from '../lib/storage.js'
 import { WEEKDAY_LONG, WEEKDAY_SHORT, formatTime, minutesOf } from '../lib/date.js'
 import { cmToFtIn, ftInToCm, kgToLb, lbToKg, weightUnit } from '../lib/units.js'
@@ -281,7 +281,7 @@ export function SettingsView() {
           <div style={{ marginTop: 12 }}>
             <Notice tone="alert">
               Your target was below your BMR, so it has been raised to {targets.bmr} kcal. Planning
-              below resting expenditure is the pattern that most reliably produces evening bingeing.
+              below this estimate is disabled as an app guardrail, not a medical threshold or a prediction of eating behavior.
             </Notice>
           </div>
         )}
@@ -369,8 +369,7 @@ export function SettingsView() {
             ))}
           </div>
           <p className="dim" style={{ fontSize: '0.75rem', marginTop: 12, lineHeight: 1.5 }}>
-            Dinner currently starts about {dinnerToBedHours} hours before bed. The plan aims for 3 to
-            4 between finishing dinner and sleeping.
+            Dinner currently starts about {dinnerToBedHours} hours before bed. Adjust timing to your hunger, sleep and digestive comfort.
           </p>
         </div>
       </section>
@@ -446,17 +445,41 @@ export function SettingsView() {
       {/* ── Ingredients ──────────────────────────────────────────────────── */}
       <section aria-labelledby="ing-head">
         <div className="section-head">
-          <h2 id="ing-head">Ingredients you eat</h2>
+          <h2 id="ing-head">Ingredients</h2>
           <span className="dim" style={{ fontSize: '0.75rem' }}>
-            {state.hidden.length} turned off
+            {state.hidden.length} excluded
           </span>
         </div>
         <p className="dim" style={{ fontSize: '0.8125rem', marginBottom: 10 }}>
-          Switch off anything you do not eat or do not have. It is removed from your plan
-          straight away — the closest alternative in the same group takes its place — and it stops
-          appearing in swap lists, the shopping list and sauces. A swap you made by hand is left
-          alone.
+          Tap anything you do not eat or do not have to exclude it. Excluded items are crossed out.
+          They come out of your plan straight away — the closest alternative in the same group takes
+          their place — and they stop appearing in swap lists, the shopping list and sauces. A swap
+          you made by hand is left alone.
         </p>
+
+        {/* An explicit read-out of what is excluded. The grid alone is easy to
+            misread: a dimmed pill looks like "not selected" when it actually
+            means "excluded", so the two states get spelled out here. */}
+        <div style={{ marginBottom: 12 }}>
+          {state.hidden.length === 0 ? (
+            <Notice tone="info">
+              Nothing is excluded — your plan can use any ingredient below.
+            </Notice>
+          ) : (
+            <Notice tone="warn">
+              <b>Currently excluded:</b>{' '}
+              {state.hidden.map((id) => BY_ID[id]?.name).filter(Boolean).join(', ')}.{' '}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => state.hidden.forEach((id) => dispatch({ type: 'hidden', ingredientId: id }))}
+              >
+                Put them all back
+              </button>
+            </Notice>
+          )}
+        </div>
+
         <div className="card" style={{ padding: 14 }}>
           <div className="stack">
             {CATEGORY_ORDER.map((cat) => (
@@ -466,17 +489,20 @@ export function SettingsView() {
                 </div>
                 <div className="pill-grid">
                   {INGREDIENTS.filter((i) => i.category === cat).map((i) => {
-                    const hidden = state.hidden.includes(i.id)
+                    const isHidden = state.hidden.includes(i.id)
                     return (
                       <button
                         key={i.id}
                         type="button"
-                        className="pill"
-                        aria-pressed={!hidden}
-                        style={{ textAlign: 'left', opacity: hidden ? 0.55 : 1 }}
+                        className={`pill pill--ing${isHidden ? ' pill--excluded' : ''}`}
+                        aria-pressed={isHidden}
+                        aria-label={`${i.name}: ${isHidden ? 'excluded, tap to put back' : 'included, tap to exclude'}`}
                         onClick={() => dispatch({ type: 'hidden', ingredientId: i.id })}
                       >
-                        {i.name}
+                        <span className="pill__mark" aria-hidden="true">
+                          {isHidden ? '✕' : '✓'}
+                        </span>
+                        <span className="pill__label">{i.name}</span>
                       </button>
                     )
                   })}

@@ -4,7 +4,8 @@ import { formatTime } from '../lib/date.js'
 import { IconCheck, IconInfo, IconSwap } from './Icons.jsx'
 import { MacroChips, round } from './ui.jsx'
 
-export function MealCard({ meal, isNow, onSwap, onToggleDone, onInfo, onSauce }) {
+export function MealCard({ meal, isNow, onSwap, onToggleDone, onInfo, onSauce, onRemove }) {
+  if(meal.customItems) return <article className="card personal-card"><div className="row row--between"><h3>{meal.title}</h3><b>{round(meal.actual.kcal)} kcal</b></div><p>{meal.label} · {formatTime(meal.time)}</p><ul>{meal.customItems.map((i,n)=><li key={n}>{i.name}: {i.amount} × {i.serving}</li>)}</ul><MacroChips macros={meal.actual}/><p className="dim">Gespeicherte Etikettwerte. Keine automatische Portionsänderung.</p><div className="row row--wrap"><button className="btn" aria-pressed={meal.done} onClick={()=>onToggleDone(meal)}>{meal.done?'Als gegessen erfasst':'Als gegessen markieren'}</button><button className="btn" onClick={()=>onRemove(meal)}>{meal.key.startsWith('extra_')?'Extra entfernen':'Standardmahlzeit wiederherstellen'}</button></div></article>
   const offTarget = Math.abs(meal.actual.kcal - meal.target.kcal) > meal.target.kcal * 0.12
 
   return (
