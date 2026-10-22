@@ -30,7 +30,10 @@ const files = walk(dist)
   .sort()
 
 const urls = files.map((f) => `./${f}`)
-const version = createHash('sha256').update(urls.join('\n')).digest('hex').slice(0, 12)
+// Include contents so manifest-only fixes invalidate stale offline assets too.
+const versionHash = createHash('sha256')
+for (const file of files) versionHash.update(file).update(readFileSync(join(dist, file)))
+const version = versionHash.digest('hex').slice(0, 12)
 
 const source = readFileSync(swPath, 'utf8')
 const injected = source
