@@ -58,6 +58,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
+  // Training has its own app shell and service-worker scope.
+  if (url.pathname.startsWith(new URL('./training/', self.registration.scope).pathname)) return
 
   // Navigations always resolve to the cached shell — this is a single-page app
   // with no server, so any in-scope URL is the same document.
